@@ -4,7 +4,9 @@ defmodule Exmd do
 	defstruct marker: "-",
 			  escape: 2,
 			  separator: ":",
-			  expression: true
+			  expression: true,
+			  italic: "_",
+			  bold: "__"
 
 	# See http://elixir-lang.org/docs/stable/elixir/Application.html
 	# for more information on OTP Applications
@@ -98,8 +100,8 @@ defmodule Exmd do
 	end
 
 	defp maybe_expression(bin, _, %Exmd{expression: false}), do: bin
-	defp maybe_expression(bin, :italic, %Exmd{expression: true}), do: "_"<>bin<>"_"
-	defp maybe_expression(bin, :bold, %Exmd{expression: true}), do: "*"<>bin<>"*"
-	defp maybe_expression(bin, :italic_bold, %Exmd{expression: true}), do: "_*"<>bin<>"*_"
+	defp maybe_expression(bin, :italic, %Exmd{expression: true, italic: italic}), do: italic<>bin<>italic
+	defp maybe_expression(bin, :bold, %Exmd{expression: true, bold: bold}), do: bold<>bin<>bold
+	defp maybe_expression(bin, :italic_bold, %Exmd{expression: true, italic: italic, bold: bold}), do: italic<>bold<>bin<>bold<>italic
 
 end
