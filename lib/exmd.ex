@@ -19,7 +19,7 @@ defmodule Exmd do
 
 	def convert(any, level \\ 0)
 	def convert(kv = %{}, level) when (kv != %{}) do
-		Enum.to_list(kv)
+		Map.to_list(kv)
 		|> Enum.sort(fn
 			{:__struct__, _}, _ -> true
 			{_, int}, _ when is_integer(int) -> true
