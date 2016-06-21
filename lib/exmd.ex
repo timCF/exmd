@@ -17,8 +17,9 @@ defmodule Exmd do
 		Supervisor.start_link(children, opts)
 	end
 
-	def convert(any, level \\ 0)
-	def convert(kv = %{}, level) when (kv != %{}) do
+	def convert(some, opts \\ %{escape: 2}), do: (some |> convert_process(opts, 0) |> String.strip)
+
+	defp convert_process(kv = %{}, opts = %{}, level) when (kv != %{}) do
 		Map.to_list(kv)
 		|> Enum.sort(fn
 			{:__struct__, _}, _ -> true
@@ -27,21 +28,21 @@ defmodule Exmd do
 			{_, fl}, _ when is_float(fl) -> true
 			_, _ -> false
 		end)
-		|> reducekv(level)
+		|> reducekv(opts, level)
 	end
-	def convert(lst = [_|_], level) do
+	defp convert_process(lst = [_|_], opts = %{}, level) do
 		case Keyword.keyword?(lst) do
-			true -> reducekv(lst, level)
+			true -> reducekv(lst, opts, level)
 			false ->
 				Enum.reduce(lst, "", fn(v, acc) ->
 					case nested?(v) do
-						false -> acc<>tabs(level)<>convert_simple(v)
-						true -> acc<>tabs(level)<>convert(v, level+1)
+						false -> acc<>tabs(level)<>convert_simple(v, opts)
+						true -> acc<>tabs(level)<>convert_process(v, opts, level+1)
 					end
 				end)
 		end
 	end
-	def convert(some, _), do: convert_simple(some)
+	defp convert_process(some, opts = %{}, _), do: convert_simple(some, opts)
 
 	defp tabs(0), do: "\n- "
 	defp tabs(level), do: "\n"<>Enum.reduce(1..level, "", fn(_, acc) -> acc<>"  " end)<>"- "
@@ -49,36 +50,41 @@ defmodule Exmd do
 	defp nested?(v) when is_list(v) or is_map(v), do: ((v != %{}) and (v != []))
 	defp nested?(_), do: false
 
-	defp convert_simple(some) when ((some == %{}) or (some == [])), do: "*#{some |> inspect |> escape}*"
-	defp convert_simple(some) when is_integer(some), do: "**#{some |> Integer.to_string |> escape}**"
-	defp convert_simple(some) when is_float(some), do: "**_#{some |> Float.to_string |> escape}_**"
-	defp convert_simple(some) do
+	defp convert_simple(some, opts) when ((some == %{}) or (some == [])), do: "*#{some |> inspect |> escape(opts)}*"
+	defp convert_simple(some, opts) when is_integer(some), do: "**#{some |> Integer.to_string |> escape(opts)}**"
+	defp convert_simple(some, opts) when is_float(some), do: "**_#{some |> Float.to_string([decimals: 6, compact: true]) |> escape(opts)}_**"
+	defp convert_simple(some, opts) do
 		some = Maybe.maybe_to_string(some)
 		case String.valid?(some) do
 			true ->
 				case String.contains?(some, " ") do
-					true -> "\"#{some |> escape}\""
-					false -> some |> escape
+					true -> "\"#{some |> escape(opts)}\""
+					false -> some |> escape(opts)
 				end
 			false ->
-				"*#{some |> inspect |> escape}*"
+				"*#{some |> inspect |> escape(opts)}*"
 		end
 	end
 
-	defp reducekv(kv, level) do
+	defp reducekv(kv, opts, level) do
 		Enum.reduce(kv, "", fn({k,v},acc) ->
 			case nested?(v) do
-				false -> acc<>tabs(level)<>convert_simple(k)<>": "<>convert_simple(v)
-				true -> acc<>tabs(level)<>convert_simple(k)<>convert(v, level+1)
+				false -> acc<>tabs(level)<>convert_simple(k, opts)<>": "<>convert_simple(v, opts)
+				true -> acc<>tabs(level)<>convert_simple(k, opts)<>convert_process(v, opts, level+1)
 			end
 		end)
 	end
 
-	defp escape(string) do
-		Regex.replace(~r/[\\\`\*\_\{\}\[\]\(\)\#\+\-\.\!]/, string, fn(some) -> "\\"<>some end)
+	defp escape(string, %{escape: 0}), do: string
+	defp escape(string, %{escape: 1}) do
+		string
 		|> String.replace("&","&amp;")
 		|> String.replace("<","&lt;")
 		|> String.replace(">","&gt;")
+	end
+	defp escape(string, opts = %{escape: 2}) do
+		Regex.replace(~r/[\\\`\*\_\{\}\[\]\(\)\#\+\-\.\!]/, string, fn(some) -> "\\"<>some end)
+		|> escape(%{opts | escape: 1})
 	end
 
 end
