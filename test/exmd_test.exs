@@ -24,7 +24,8 @@ defmodule ExmdTest do
 		"\n"<>Exmd.convert(@data, %Exmd{escape: 2}) |> IO.puts
 		"\n"<>Exmd.convert(@data, %Exmd{escape: 1}) |> IO.puts
 		"\n"<>Exmd.convert(@data, %Exmd{escape: 0}) |> IO.puts
-		"\n"<>Exmd.convert(@data, %Exmd{escape: 0, marker: " "}) |> IO.puts
+		"\n"<>Exmd.convert(@data, %Exmd{escape: 0, marker: "", expression: false}) |> IO.puts
+		"\n"<>Exmd.convert(@data, %Exmd{escape: 0, marker: "", separator: " =>", expression: false}) |> IO.puts
 		assert 1 + 1 == 2
 	end
 end
