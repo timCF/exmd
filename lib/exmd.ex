@@ -1,6 +1,9 @@
 defmodule Exmd do
 	use Application
 
+	defstruct marker: "-",
+			  escape: 2
+
 	# See http://elixir-lang.org/docs/stable/elixir/Application.html
 	# for more information on OTP Applications
 	def start(_type, _args) do
@@ -17,9 +20,9 @@ defmodule Exmd do
 		Supervisor.start_link(children, opts)
 	end
 
-	def convert(some, opts \\ %{escape: 2}), do: (some |> convert_process(opts, 0) |> String.strip)
+	def convert(some, opts \\ %Exmd{}), do: (some |> convert_process(opts, 0) |> String.strip)
 
-	defp convert_process(kv = %{}, opts = %{}, level) when (kv != %{}) do
+	defp convert_process(kv = %{}, opts = %Exmd{}, level) when (kv != %{}) do
 		Map.to_list(kv)
 		|> Enum.sort(fn
 			{:__struct__, _}, _ -> true
@@ -30,30 +33,30 @@ defmodule Exmd do
 		end)
 		|> reducekv(opts, level)
 	end
-	defp convert_process(lst = [_|_], opts = %{}, level) do
+	defp convert_process(lst = [_|_], opts = %Exmd{}, level) do
 		case Keyword.keyword?(lst) do
 			true -> reducekv(lst, opts, level)
 			false ->
 				Enum.reduce(lst, "", fn(v, acc) ->
 					case nested?(v) do
-						false -> acc<>tabs(level)<>convert_simple(v, opts)
-						true -> acc<>tabs(level)<>convert_process(v, opts, level+1)
+						false -> acc<>tabs(level, opts)<>convert_simple(v, opts)
+						true -> acc<>tabs(level, opts)<>convert_process(v, opts, level+1)
 					end
 				end)
 		end
 	end
-	defp convert_process(some, opts = %{}, _), do: convert_simple(some, opts)
+	defp convert_process(some, opts = %Exmd{}, _), do: convert_simple(some, opts)
 
-	defp tabs(0), do: "\n- "
-	defp tabs(level), do: "\n"<>Enum.reduce(1..level, "", fn(_, acc) -> acc<>"  " end)<>"- "
+	defp tabs(0, %Exmd{marker: marker}), do: "\n#{marker} "
+	defp tabs(level, %Exmd{marker: marker}), do: "\n"<>Enum.reduce(1..level, "", fn(_, acc) -> acc<>"  " end)<>"#{marker} "
 
 	defp nested?(v) when is_list(v) or is_map(v), do: ((v != %{}) and (v != []))
 	defp nested?(_), do: false
 
-	defp convert_simple(some, opts) when ((some == %{}) or (some == [])), do: "*#{some |> inspect |> escape(opts)}*"
-	defp convert_simple(some, opts) when is_integer(some), do: "**#{some |> Integer.to_string |> escape(opts)}**"
-	defp convert_simple(some, opts) when is_float(some), do: "**_#{some |> Float.to_string([decimals: 6, compact: true]) |> escape(opts)}_**"
-	defp convert_simple(some, opts) do
+	defp convert_simple(some, opts = %Exmd{}) when ((some == %{}) or (some == [])), do: "*#{some |> inspect |> escape(opts)}*"
+	defp convert_simple(some, opts = %Exmd{}) when is_integer(some), do: "**#{some |> Integer.to_string |> escape(opts)}**"
+	defp convert_simple(some, opts = %Exmd{}) when is_float(some), do: "**_#{some |> Float.to_string([decimals: 6, compact: true]) |> escape(opts)}_**"
+	defp convert_simple(some, opts = %Exmd{}) do
 		some = Maybe.maybe_to_string(some)
 		case String.valid?(some) do
 			true ->
@@ -66,11 +69,11 @@ defmodule Exmd do
 		end
 	end
 
-	defp reducekv(kv, opts, level) do
+	defp reducekv(kv, opts = %Exmd{}, level) do
 		Enum.reduce(kv, "", fn({k,v},acc) ->
 			case nested?(v) do
-				false -> acc<>tabs(level)<>convert_simple(k, opts)<>": "<>convert_simple(v, opts)
-				true -> acc<>tabs(level)<>convert_simple(k, opts)<>convert_process(v, opts, level+1)
+				false -> acc<>tabs(level, opts)<>convert_simple(k, opts)<>": "<>convert_simple(v, opts)
+				true -> acc<>tabs(level, opts)<>convert_simple(k, opts)<>convert_process(v, opts, level+1)
 			end
 		end)
 	end
@@ -82,9 +85,9 @@ defmodule Exmd do
 		|> String.replace("<","&lt;")
 		|> String.replace(">","&gt;")
 	end
-	defp escape(string, opts = %{escape: 2}) do
+	defp escape(string, opts = %Exmd{escape: 2}) do
 		Regex.replace(~r/[\\\`\*\_\{\}\[\]\(\)\#\+\-\.\!]/, string, fn(some) -> "\\"<>some end)
-		|> escape(%{opts | escape: 1})
+		|> escape(%Exmd{opts | escape: 1})
 	end
 
 end

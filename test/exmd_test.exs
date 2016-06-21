@@ -21,9 +21,10 @@ defmodule ExmdTest do
 
 	test "the truth" do
 		Exmd.convert(@data) |> write
-		"\n"<>Exmd.convert(@data, %{escape: 2}) |> IO.puts
-		"\n"<>Exmd.convert(@data, %{escape: 1}) |> IO.puts
-		"\n"<>Exmd.convert(@data, %{escape: 0}) |> IO.puts
+		"\n"<>Exmd.convert(@data, %Exmd{escape: 2}) |> IO.puts
+		"\n"<>Exmd.convert(@data, %Exmd{escape: 1}) |> IO.puts
+		"\n"<>Exmd.convert(@data, %Exmd{escape: 0}) |> IO.puts
+		"\n"<>Exmd.convert(@data, %Exmd{escape: 0, marker: " "}) |> IO.puts
 		assert 1 + 1 == 2
 	end
 end
