@@ -18,7 +18,17 @@ defmodule Exmd do
 	end
 
 	def convert(any, level \\ 0)
-	def convert(kv = %{}, level) when (kv != %{}), do: reducekv(kv, level)
+	def convert(kv = %{}, level) when (kv != %{}) do
+		Enum.to_list(kv)
+		|> Enum.sort(fn
+			{:__struct__, _}, _ -> true
+			{_, int}, _ when is_integer(int) -> true
+			{_, fl}, {_, int} when is_float(fl) and is_integer(int) -> false
+			{_, fl}, _ when is_float(fl) -> true
+			_, _ -> false
+		end)
+		|> reducekv(level)
+	end
 	def convert(lst = [_|_], level) do
 		case Keyword.keyword?(lst) do
 			true -> reducekv(lst, level)

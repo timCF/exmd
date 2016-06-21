@@ -4,6 +4,7 @@ defmodule ExmdTest do
 
 	defp write(data) do
 		IO.inspect(data)
+		IO.puts(data)
 		File.write!("./test/output.md", data)
 	end
 
