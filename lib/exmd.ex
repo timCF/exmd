@@ -99,7 +99,7 @@ defmodule Exmd do
 
 	defp maybe_expression(bin, _, %Exmd{expression: false}), do: bin
 	defp maybe_expression(bin, :italic, %Exmd{expression: true}), do: "_"<>bin<>"_"
-	defp maybe_expression(bin, :bold, %Exmd{expression: true}), do: "__"<>bin<>"__"
-	defp maybe_expression(bin, :italic_bold, %Exmd{expression: true}), do: "___"<>bin<>"___"
+	defp maybe_expression(bin, :bold, %Exmd{expression: true}), do: "*"<>bin<>"*"
+	defp maybe_expression(bin, :italic_bold, %Exmd{expression: true}), do: "_*"<>bin<>"*_"
 
 end
