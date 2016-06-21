@@ -20,7 +20,12 @@ defmodule Exmd do
 		Supervisor.start_link(children, opts)
 	end
 
-	def convert(some, opts \\ %Exmd{}), do: (some |> convert_process(opts, 0) |> String.strip)
+	def convert(some, opts \\ %Exmd{}) do
+		case convert_process(some, opts, 0) do
+			<<"\n", rest::binary>> -> rest
+			text -> text
+		end
+	end
 
 	defp convert_process(kv = %{}, opts = %Exmd{}, level) when (kv != %{}) do
 		Map.to_list(kv)
