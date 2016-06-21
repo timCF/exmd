@@ -31,6 +31,7 @@ defmodule Exmd do
 				end)
 		end
 	end
+	def convert(some, _), do: convert_simple(some)
 
 	defp tabs(0), do: "\n- "
 	defp tabs(level), do: "\n"<>Enum.reduce(1..level, "", fn(_, acc) -> acc<>"  " end)<>"- "
@@ -38,6 +39,7 @@ defmodule Exmd do
 	defp nested?(v) when is_list(v) or is_map(v), do: ((v != %{}) and (v != []))
 	defp nested?(_), do: false
 
+	defp convert_simple(some) when ((some == %{}) or (some == [])), do: "*#{some |> inspect |> escape}*"
 	defp convert_simple(some) when is_integer(some), do: "**#{some |> Integer.to_string |> escape}**"
 	defp convert_simple(some) when is_float(some), do: "**_#{some |> Float.to_string |> escape}_**"
 	defp convert_simple(some) do
@@ -45,11 +47,11 @@ defmodule Exmd do
 		case String.valid?(some) do
 			true ->
 				case String.contains?(some, " ") do
-					true -> "\"#{some}\""
-					false -> some
+					true -> "\"#{some |> escape}\""
+					false -> some |> escape
 				end
 			false ->
-				"*#{inspect(some) |> escape}*"
+				"*#{some |> inspect |> escape}*"
 		end
 	end
 

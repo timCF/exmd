@@ -2,11 +2,11 @@
 - float: **_7\.50000000000000000000e\+00_**
 - int: **100**
 - list
-  - "hello && world"
+  - "hello &amp;&amp; world"
   - **123**
   - *&lt;&lt;1, 3, 255, 5&gt;&gt;*
   - 
     - bar: *%\{\}*
     - baz: world
     - buf: nil
-    - foo: 
+    - foo: *\[\]*
